@@ -339,7 +339,7 @@ class TestS3KeySensor:
     def test_custom_metadata_default_return_vals(self):
         def check_fn(files: list) -> bool:
             for f in files:
-                if "Size" not in f:
+                if "Key" not in f or "Size" not in f or f["Key"] != "test-key":
                     return False
             return True
 
@@ -380,7 +380,13 @@ class TestS3KeySensor:
     def test_custom_metadata_default_custom_vals(self):
         def check_fn(files: list) -> bool:
             for f in files:
-                if "LastModified" not in f or "ETag" not in f or "Size" in f:
+                if (
+                    "Key" not in f
+                    or "LastModified" not in f
+                    or "ETag" not in f
+                    or "Size" in f
+                    or f["Key"] != "test-key"
+                ):
                     return False
             return True
 
@@ -408,7 +414,7 @@ class TestS3KeySensor:
             metadata_keys = set(hook.head_object(bucket_name="test-bucket", key="test-key").keys())
             test_data_keys = set(files[0].keys())
 
-            return test_data_keys == metadata_keys
+            return (test_data_keys - {"Key"}) == metadata_keys and files[0]["Key"] == "test-key"
 
         hook = S3Hook()
         hook.create_bucket(bucket_name="test-bucket")
@@ -432,7 +438,7 @@ class TestS3KeySensor:
     def test_custom_metadata_wildcard(self, mock_file_metadata, mock_head_object):
         def check_fn(files: list) -> bool:
             for f in files:
-                if "ETag" not in f or "MissingMeta" not in f:
+                if "Key" not in f or "ETag" not in f or "MissingMeta" not in f or f["Key"] != "test-key":
                     return False
             return True
 
@@ -454,7 +460,12 @@ class TestS3KeySensor:
     def test_custom_metadata_wildcard_all_attributes(self, mock_file_metadata, mock_head_object):
         def check_fn(files: list) -> bool:
             for f in files:
-                if "ContentLength" not in f or "MissingMeta" not in f:
+                if (
+                    "Key" not in f
+                    or "ContentLength" not in f
+                    or "MissingMeta" not in f
+                    or f["Key"] != "test-key"
+                ):
                     return False
             return True
 

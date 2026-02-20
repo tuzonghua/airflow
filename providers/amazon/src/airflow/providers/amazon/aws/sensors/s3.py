@@ -137,17 +137,19 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
             # Reduce the set of metadata to requested attributes
             files = []
             for f in key_matches:
+                obj = self.hook.head_object(f["Key"], bucket_name)  # type: ignore[index]
+                if obj is None:
+                    return False
                 metadata = {}
                 if "*" in self.metadata_keys:
-                    metadata = self.hook.head_object(f["Key"], bucket_name)  # type: ignore[index]
+                    metadata = obj
                 else:
                     for mk in self.metadata_keys:
-                        try:
-                            metadata[mk] = f[mk]  # type: ignore[index]
-                        except KeyError:
-                            # supplied key might be from head_object response
-                            self.log.info("Key %s not found in response, performing head_object", mk)
-                            metadata[mk] = self.hook.head_object(f["Key"], bucket_name).get(mk, None)  # type: ignore[index]
+                        if mk == "Size":
+                            metadata[mk] = obj.get("ContentLength")
+                        else:
+                            metadata[mk] = obj.get(mk, None)
+                metadata["Key"] = f["Key"]  # type: ignore[index]
                 files.append(metadata)
 
         elif self.use_regex:
@@ -162,15 +164,14 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
                 return False
             metadata = {}
             if "*" in self.metadata_keys:
-                metadata = self.hook.head_object(key, bucket_name)
-
+                metadata = obj
             else:
-                for key in self.metadata_keys:
-                    # backwards compatibility with original implementation
-                    if key == "Size":
-                        metadata[key] = obj.get("ContentLength")
+                for mk in self.metadata_keys:
+                    if mk == "Size":
+                        metadata[mk] = obj.get("ContentLength")
                     else:
-                        metadata[key] = obj.get(key, None)
+                        metadata[mk] = obj.get(mk, None)
+            metadata["Key"] = key
             files = [metadata]
 
         if self.check_fn is not None:
