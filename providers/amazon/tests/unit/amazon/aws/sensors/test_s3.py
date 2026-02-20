@@ -335,19 +335,11 @@ class TestS3KeySensor:
         with pytest.raises(AirflowException, match=message):
             op.execute_complete(context={}, event={"status": "error", "message": message})
 
-    @pytest.mark.parametrize(
-        ("metadata_keys", "expected"),
-        [
-            (["Size", "Key"], True),
-            (["Content"], False),
-            (None, True),
-        ],
-    )
     @mock_aws
-    def test_custom_metadata_default_return_vals(self, metadata_keys, expected):
+    def test_custom_metadata_default_return_vals(self):
         def check_fn(files: list) -> bool:
             for f in files:
-                if "Size" not in f or "Key" not in f:
+                if "Size" not in f:
                     return False
             return True
 
@@ -358,14 +350,31 @@ class TestS3KeySensor:
             key="test-key",
             string_data="test-body",
         )
+
         op = S3KeySensor(
             task_id="test-metadata",
             bucket_key="test-key",
             bucket_name="test-bucket",
-            metadata_keys=metadata_keys,
+            metadata_keys=["Size"],
             check_fn=check_fn,
         )
-        assert op.poke(None) is expected
+        assert op.poke(None) is True
+        op = S3KeySensor(
+            task_id="test-metadata",
+            bucket_key="test-key",
+            bucket_name="test-bucket",
+            metadata_keys=["Content"],
+            check_fn=check_fn,
+        )
+        assert op.poke(None) is False
+
+        op = S3KeySensor(
+            task_id="test-metadata",
+            bucket_key="test-key",
+            bucket_name="test-bucket",
+            check_fn=check_fn,
+        )
+        assert op.poke(None) is True
 
     @mock_aws
     def test_custom_metadata_default_custom_vals(self):
@@ -397,7 +406,7 @@ class TestS3KeySensor:
         def check_fn(files: list) -> bool:
             hook = S3Hook()
             metadata_keys = set(hook.head_object(bucket_name="test-bucket", key="test-key").keys())
-            test_data_keys = set(files[0].keys()) - {"Key"}
+            test_data_keys = set(files[0].keys())
 
             return test_data_keys == metadata_keys
 
