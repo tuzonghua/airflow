@@ -66,6 +66,7 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
     :param deferrable: Run operator in the deferrable mode
     :param use_regex: whether to use regex to check bucket
     :param metadata_keys: List of head_object attributes to gather and send to ``check_fn``.
+        Contains the associated S3 key along with list of given attributes.
         Acceptable values: Any top level attribute returned by s3.head_object. Specify * to return
         all available attributes.
         Default value: "Size".
@@ -113,7 +114,7 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
         """
         Set variable `files` which contains a list of dict which contains attributes defined by the user
         Format: [{
-            'Size': int
+            'Key': str, 'Size': int
         }]
         """
         if self.wildcard_match:
