@@ -76,7 +76,7 @@ class S3KeyTrigger(BaseTrigger):
         self.region_name = region_name
         self.verify = verify
         self.botocore_config = botocore_config
-        self.metadata_keys = metadata_keys if metadata_keys else ["Size", "Key"]
+        self.metadata_keys = metadata_keys if metadata_keys else ["Size"]
 
     def serialize(self) -> tuple[str, dict[str, Any]]:
         """Serialize S3KeyTrigger arguments and classpath."""

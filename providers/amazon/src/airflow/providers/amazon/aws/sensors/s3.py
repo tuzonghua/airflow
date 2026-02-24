@@ -66,6 +66,7 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
     :param deferrable: Run operator in the deferrable mode
     :param use_regex: whether to use regex to check bucket
     :param metadata_keys: List of head_object attributes to gather and send to ``check_fn``.
+        Contains the associated S3 key along with list of given attributes.
         Acceptable values: Any top level attribute returned by s3.head_object. Specify * to return
         all available attributes.
         Default value: "Size".
@@ -104,7 +105,7 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
         self.verify = verify
         self.deferrable = deferrable
         self.use_regex = use_regex
-        self.metadata_keys = metadata_keys if metadata_keys else ["Size", "Key"]
+        self.metadata_keys = metadata_keys if metadata_keys else ["Size"]
 
     def _check_key(self, key, context: Context):
         bucket_name, key = self.hook.get_s3_bucket_key(self.bucket_name, key, "bucket_name", "bucket_key")
@@ -113,8 +114,7 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
         """
         Set variable `files` which contains a list of dict which contains attributes defined by the user
         Format: [{
-            'Size': int,
-            'Key': str,
+            'Key': str, 'Size': int
         }]
         """
         if self.wildcard_match:
@@ -138,17 +138,19 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
             # Reduce the set of metadata to requested attributes
             files = []
             for f in key_matches:
+                obj = self.hook.head_object(f["Key"], bucket_name)  # type: ignore[index]
+                if obj is None:
+                    return False
                 metadata = {}
                 if "*" in self.metadata_keys:
-                    metadata = self.hook.head_object(f["Key"], bucket_name)  # type: ignore[index]
+                    metadata = obj
                 else:
                     for mk in self.metadata_keys:
-                        try:
-                            metadata[mk] = f[mk]  # type: ignore[index]
-                        except KeyError:
-                            # supplied key might be from head_object response
-                            self.log.info("Key %s not found in response, performing head_object", mk)
-                            metadata[mk] = self.hook.head_object(f["Key"], bucket_name).get(mk, None)  # type: ignore[index]
+                        if mk == "Size":
+                            metadata[mk] = obj.get("ContentLength")
+                        else:
+                            metadata[mk] = obj.get(mk, None)
+                metadata["Key"] = f["Key"]  # type: ignore[index]
                 files.append(metadata)
 
         elif self.use_regex:
@@ -163,15 +165,14 @@ class S3KeySensor(AwsBaseSensor[S3Hook]):
                 return False
             metadata = {}
             if "*" in self.metadata_keys:
-                metadata = self.hook.head_object(key, bucket_name)
-
+                metadata = obj
             else:
-                for key in self.metadata_keys:
-                    # backwards compatibility with original implementation
-                    if key == "Size":
-                        metadata[key] = obj.get("ContentLength")
+                for mk in self.metadata_keys:
+                    if mk == "Size":
+                        metadata[mk] = obj.get("ContentLength")
                     else:
-                        metadata[key] = obj.get(key, None)
+                        metadata[mk] = obj.get(mk, None)
+            metadata["Key"] = key
             files = [metadata]
 
         if self.check_fn is not None:

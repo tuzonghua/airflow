@@ -204,8 +204,8 @@ Wait on an Amazon S3 key
 To wait for one or multiple keys to be present in an Amazon S3 bucket you can use
 :class:`~airflow.providers.amazon.aws.sensors.s3.S3KeySensor`.
 For each key, it calls
-`head_object <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.head_object>`__
-API (or `list_objects_v2 <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_objects_v2>`__
+`head_object <https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/head_object.html>`__
+API (or `list_objects_v2 <https://docs.aws.amazon.com/boto3/latest/reference/services/s3/client/list_objects_v2.html>`__
 API if ``wildcard_match`` is ``True``) to check whether it is present or not.
 Please keep in mind, especially when used to check a large volume of keys, that it makes one API call per key.
 
@@ -217,6 +217,7 @@ To check one file:
     :start-after: [START howto_sensor_s3_key_single_key]
     :end-before: [END howto_sensor_s3_key_single_key]
 
+
 To check multiple files:
 
 .. exampleinclude:: /../../amazon/tests/system/amazon/aws/example_s3.py
@@ -224,6 +225,7 @@ To check multiple files:
     :dedent: 4
     :start-after: [START howto_sensor_s3_key_multiple_keys]
     :end-before: [END howto_sensor_s3_key_multiple_keys]
+
 
 To check a file with regular expression:
 
@@ -233,6 +235,7 @@ To check a file with regular expression:
     :start-after: [START howto_sensor_s3_key_regex]
     :end-before: [END howto_sensor_s3_key_regex]
 
+
 To check with an additional custom check you can define a function which receives a list of matched S3 object
 attributes and returns a boolean:
 
@@ -241,11 +244,13 @@ attributes and returns a boolean:
 
 This function is called for each key passed as parameter in ``bucket_key``.
 The reason why the parameter of this function is a list of objects is when ``wildcard_match`` is ``True``,
-multiple files can match one key. The list of matched S3 object attributes contain only the size and is this format:
+multiple files can match one key. The list of matched S3 object attributes contains the associated S3 key as well as
+any valid keys in the ``head_object`` response. If no ``metadata_keys`` are given, it defaults to the size
+and is in this format:
 
 .. code-block:: python
 
-    [{"Size": int}]
+    [{"Key": str, "Size": int}]
 
 .. exampleinclude:: /../../amazon/tests/system/amazon/aws/example_s3.py
     :language: python
@@ -258,6 +263,14 @@ multiple files can match one key. The list of matched S3 object attributes conta
     :dedent: 4
     :start-after: [START howto_sensor_s3_key_function]
     :end-before: [END howto_sensor_s3_key_function]
+
+To filter by S3 key:
+
+.. exampleinclude:: /../../amazon/tests/system/amazon/aws/example_s3.py
+    :language: python
+    :dedent: 4
+    :start-after: [START howto_sensor_s3_key_function_filter_definition]
+    :end-before: [END howto_sensor_s3_key_function_filter_definition]
 
 You can also run this operator in deferrable mode by setting the parameter ``deferrable`` to True.
 This will lead to efficient utilization of Airflow workers as polling for job status happens on

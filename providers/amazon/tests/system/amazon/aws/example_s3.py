@@ -88,6 +88,21 @@ with DAG(
 
     # [END howto_sensor_s3_key_function_definition]
 
+    # [START howto_sensor_s3_key_function_filter_definition]
+    def check_fn_with_filter(files: list, **kwargs) -> bool:
+        """
+        Example of custom check: check if one file is bigger than ``20 bytes``
+
+        :param files: List of S3 object attributes.
+        :return: true if the criteria is met
+        """
+        for f in files:
+            if "hadoop" in f.get("Key", ""):
+                return f.get("Size", 0) > 20
+        return True
+
+    # [END howto_sensor_s3_key_function_filter_definition]
+
     # [START howto_operator_s3_create_bucket]
     create_bucket = S3CreateBucketOperator(
         task_id="create_bucket",
