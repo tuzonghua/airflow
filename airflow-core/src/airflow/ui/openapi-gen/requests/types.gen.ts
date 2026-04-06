@@ -138,8 +138,8 @@ export type BackfillResponse = {
     from_date: string;
     to_date: string;
     dag_run_conf: {
-        [key: string]: unknown;
-    };
+    [key: string]: unknown;
+} | null;
     is_paused: boolean;
     reprocess_behavior: ReprocessBehavior;
     max_active_runs: number;
@@ -427,6 +427,7 @@ export type ClearTaskInstancesBody = {
      */
     run_on_latest_version?: boolean;
     prevent_running_task?: boolean;
+    note?: string | null;
 };
 
 /**
@@ -540,6 +541,7 @@ export type DAGDetailsResponse = {
     description: string | null;
     timetable_summary: string | null;
     timetable_description: string | null;
+    timetable_partitioned: boolean;
     tags: Array<DagTagResponse>;
     max_active_tasks: number;
     max_active_runs: number | null;
@@ -618,6 +620,7 @@ export type DAGResponse = {
     description: string | null;
     timetable_summary: string | null;
     timetable_description: string | null;
+    timetable_partitioned: boolean;
     tags: Array<DagTagResponse>;
     max_active_tasks: number;
     max_active_runs: number | null;
@@ -815,7 +818,7 @@ export type DagRunTriggeredByType = 'cli' | 'operator' | 'rest_api' | 'ui' | 'te
 /**
  * Class with DagRun types.
  */
-export type DagRunType = 'backfill' | 'scheduled' | 'manual' | 'asset_triggered' | 'asset_materialization';
+export type DagRunType = 'backfill' | 'scheduled' | 'manual' | 'operator_triggered' | 'asset_triggered' | 'asset_materialization';
 
 /**
  * DAG schedule reference serializer for assets.
@@ -943,11 +946,11 @@ export type ExternalViewResponse = {
     url_route?: string | null;
     category?: string | null;
     href: string;
-    destination?: 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance';
+    destination?: 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'base';
     [key: string]: unknown | string;
 };
 
-export type destination = 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance';
+export type destination = 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'base';
 
 /**
  * Extra Links Response.
@@ -1132,6 +1135,22 @@ export type LastAssetEventResponse = {
 };
 
 /**
+ * Materialize asset request.
+ */
+export type MaterializeAssetBody = {
+    dag_run_id?: string | null;
+    data_interval_start?: string | null;
+    data_interval_end?: string | null;
+    logical_date?: string | null;
+    run_after?: string | null;
+    conf?: {
+    [key: string]: unknown;
+} | null;
+    note?: string | null;
+    partition_key?: string | null;
+};
+
+/**
  * Request body for Clear Task Instances endpoint.
  */
 export type PatchTaskInstanceBody = {
@@ -1292,11 +1311,11 @@ export type ReactAppResponse = {
     url_route?: string | null;
     category?: string | null;
     bundle_url: string;
-    destination?: 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'dashboard';
+    destination?: 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'base' | 'dashboard';
     [key: string]: unknown | string;
 };
 
-export type destination2 = 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'dashboard';
+export type destination2 = 'nav' | 'dag' | 'dag_run' | 'task' | 'task_instance' | 'base' | 'dashboard';
 
 /**
  * Internal enum for setting reprocess behavior in a backfill.
@@ -1858,16 +1877,6 @@ export type DAGRunStates = {
 };
 
 /**
- * DAG Run Types for responses.
- */
-export type DAGRunTypes = {
-    backfill: number;
-    scheduled: number;
-    manual: number;
-    asset_triggered: number;
-};
-
-/**
  * DAG with latest dag runs collection response serializer.
  */
 export type DAGWithLatestDagRunsCollectionResponse = {
@@ -1893,6 +1902,7 @@ export type DAGWithLatestDagRunsResponse = {
     description: string | null;
     timetable_summary: string | null;
     timetable_description: string | null;
+    timetable_partitioned: boolean;
     tags: Array<DagTagResponse>;
     max_active_tasks: number;
     max_active_runs: number | null;
@@ -1928,6 +1938,37 @@ export type DashboardDagStatsResponse = {
 };
 
 /**
+ * DeadlineAlert Collection serializer for responses.
+ */
+export type DeadlineAlertCollectionResponse = {
+    deadline_alerts: Array<DeadlineAlertResponse>;
+    total_entries: number;
+};
+
+/**
+ * DeadlineAlert serializer for responses.
+ */
+export type DeadlineAlertResponse = {
+    id: string;
+    name?: string | null;
+    description?: string | null;
+    reference_type: string;
+    /**
+     * Interval in seconds between deadline evaluations.
+     */
+    interval: number;
+    created_at: string;
+};
+
+/**
+ * Deadline Collection serializer for responses.
+ */
+export type DeadlineCollectionResponse = {
+    deadlines: Array<DeadlineResponse>;
+    total_entries: number;
+};
+
+/**
  * Deadline serializer for responses.
  */
 export type DeadlineResponse = {
@@ -1935,16 +1976,10 @@ export type DeadlineResponse = {
     deadline_time: string;
     missed: boolean;
     created_at: string;
+    dag_id: string;
+    dag_run_id: string;
     alert_name?: string | null;
     alert_description?: string | null;
-};
-
-/**
- * Deadline Collection serializer for responses.
- */
-export type DealineCollectionResponse = {
-    deadlines: Array<DeadlineResponse>;
-    total_entries: number;
 };
 
 /**
@@ -1987,6 +2022,22 @@ export type GanttTaskInstance = {
 };
 
 /**
+ * Request body for generating a token.
+ */
+export type GenerateTokenBody = {
+    token_type?: TokenType;
+};
+
+/**
+ * Response for a generated token.
+ */
+export type GenerateTokenResponse = {
+    access_token: string;
+    token_type: TokenType;
+    expires_in_seconds: number;
+};
+
+/**
  * Base Node serializer for responses.
  */
 export type GridNodeResponse = {
@@ -2009,6 +2060,7 @@ export type GridRunsResponse = {
     run_after: string;
     state: DagRunState | null;
     run_type: DagRunType;
+    dag_versions?: Array<DagVersionResponse>;
     has_missed_deadline: boolean;
     readonly duration: number;
 };
@@ -2026,9 +2078,9 @@ export type GridTISummaries = {
  * Historical Metric Data serializer for responses.
  */
 export type HistoricalMetricDataResponse = {
-    dag_run_types: DAGRunTypes;
     dag_run_states: DAGRunStates;
     task_instance_states: TaskInstanceStateCount;
+    state_count_limit: number;
 };
 
 /**
@@ -2043,6 +2095,7 @@ export type LightGridTaskInstanceSummary = {
 } | null;
     min_start_date: string | null;
     max_end_date: string | null;
+    dag_version_number?: number | null;
 };
 
 /**
@@ -2189,20 +2242,25 @@ export type TeamResponse = {
  */
 export type Theme = {
     tokens: {
-        [key: string]: {
-            [key: string]: {
-                [key: string]: {
-                    [key: string]: OklchColor;
-                };
-            };
-        };
+        [key: string]: ThemeColors;
     };
     globalCss?: {
     [key: string]: {
         [key: string]: unknown;
     };
 } | null;
+    icon?: string | null;
+    icon_dark_mode?: string | null;
 };
+
+export type ThemeColors = {
+    [key: string]: unknown;
+};
+
+/**
+ * Type of token to generate.
+ */
+export type TokenType = 'api' | 'cli';
 
 /**
  * Optional alert to be shown at the top of the page.
@@ -2288,6 +2346,7 @@ export type CreateAssetEventResponse = AssetEventResponse;
 
 export type MaterializeAssetData = {
     assetId: number;
+    requestBody?: MaterializeAssetBody | null;
 };
 
 export type MaterializeAssetResponse = DAGRunResponse;
@@ -2507,7 +2566,12 @@ export type ClearDagRunData = {
 export type ClearDagRunResponse = TaskInstanceCollectionResponse | DAGRunResponse;
 
 export type GetDagRunsData = {
+    bundleVersion?: string | null;
     confContains?: string;
+    /**
+     * Filter by consuming asset name or URI using pattern matching
+     */
+    consumingAssetPattern?: string | null;
     dagId: string;
     /**
      * SQL LIKE expression — use `%` / `_` wildcards (e.g. `%customer_%`). or the pipe `|` operator for OR logic (e.g. `dag1 | dag2`). Regular expressions are **not** supported.
@@ -3525,6 +3589,12 @@ export type GetAuthMenusResponse = MenuItemCollectionResponse;
 
 export type GetCurrentUserInfoResponse = AuthenticatedMeResponse;
 
+export type GenerateTokenData = {
+    requestBody: GenerateTokenBody;
+};
+
+export type GenerateTokenResponse2 = GenerateTokenResponse;
+
 export type GetPartitionedDagRunsData = {
     dagId?: string | null;
     hasCreatedDagRunId?: boolean | null;
@@ -3555,18 +3625,39 @@ export type HistoricalMetricsResponse = HistoricalMetricDataResponse;
 
 export type DagStatsResponse2 = DashboardDagStatsResponse;
 
-export type GetDagRunDeadlinesData = {
+export type GetDeadlinesData = {
     dagId: string;
     dagRunId: string;
+    deadlineTimeGt?: string | null;
+    deadlineTimeGte?: string | null;
+    deadlineTimeLt?: string | null;
+    deadlineTimeLte?: string | null;
+    lastUpdatedAtGt?: string | null;
+    lastUpdatedAtGte?: string | null;
+    lastUpdatedAtLt?: string | null;
+    lastUpdatedAtLte?: string | null;
     limit?: number;
+    missed?: boolean | null;
     offset?: number;
     /**
-     * Attributes to order by, multi criteria sort is supported. Prefix with `-` for descending order. Supported attributes: `id, deadline_time, created_at, alert_name`
+     * Attributes to order by, multi criteria sort is supported. Prefix with `-` for descending order. Supported attributes: `id, deadline_time, created_at, last_updated_at, missed, dag_id, dag_run_id, alert_name`
      */
     orderBy?: Array<(string)>;
 };
 
-export type GetDagRunDeadlinesResponse = DealineCollectionResponse;
+export type GetDeadlinesResponse = DeadlineCollectionResponse;
+
+export type GetDagDeadlineAlertsData = {
+    dagId: string;
+    limit?: number;
+    offset?: number;
+    /**
+     * Attributes to order by, multi criteria sort is supported. Prefix with `-` for descending order. Supported attributes: `id, created_at, name, interval`
+     */
+    orderBy?: Array<(string)>;
+};
+
+export type GetDagDeadlineAlertsResponse = DeadlineAlertCollectionResponse;
 
 export type StructureDataData = {
     dagId: string;
@@ -3628,12 +3719,12 @@ export type GetGridRunsData = {
 
 export type GetGridRunsResponse = Array<GridRunsResponse>;
 
-export type GetGridTiSummariesData = {
+export type GetGridTiSummariesStreamData = {
     dagId: string;
-    runId: string;
+    runIds?: Array<(string)> | null;
 };
 
-export type GetGridTiSummariesResponse = GridTISummaries;
+export type GetGridTiSummariesStreamResponse = string;
 
 export type GetGanttDataData = {
     dagId: string;
@@ -3649,6 +3740,10 @@ export type GetCalendarData = {
     logicalDateGte?: string | null;
     logicalDateLt?: string | null;
     logicalDateLte?: string | null;
+    partitionDateGt?: string | null;
+    partitionDateGte?: string | null;
+    partitionDateLt?: string | null;
+    partitionDateLte?: string | null;
 };
 
 export type GetCalendarResponse = CalendarTimeRangeCollectionResponse;
@@ -3850,10 +3945,6 @@ export type $OpenApiTs = {
                  */
                 403: HTTPExceptionResponse;
                 /**
-                 * Not Found
-                 */
-                404: HTTPExceptionResponse;
-                /**
                  * Validation Error
                  */
                 422: HTTPValidationError;
@@ -3928,10 +4019,6 @@ export type $OpenApiTs = {
                  * Forbidden
                  */
                 403: HTTPExceptionResponse;
-                /**
-                 * Not Found
-                 */
-                404: HTTPExceptionResponse;
                 /**
                  * Validation Error
                  */
@@ -5543,6 +5630,10 @@ export type $OpenApiTs = {
                  */
                 200: TaskInstanceCollectionResponse;
                 /**
+                 * Bad Request
+                 */
+                400: HTTPExceptionResponse;
+                /**
                  * Unauthorized
                  */
                 401: HTTPExceptionResponse;
@@ -6734,6 +6825,21 @@ export type $OpenApiTs = {
             };
         };
     };
+    '/ui/auth/token': {
+        post: {
+            req: GenerateTokenData;
+            res: {
+                /**
+                 * Successful Response
+                 */
+                200: GenerateTokenResponse;
+                /**
+                 * Validation Error
+                 */
+                422: HTTPValidationError;
+            };
+        };
+    };
     '/ui/partitioned_dag_runs': {
         get: {
             req: GetPartitionedDagRunsData;
@@ -6814,12 +6920,35 @@ export type $OpenApiTs = {
     };
     '/ui/dags/{dag_id}/dagRuns/{dag_run_id}/deadlines': {
         get: {
-            req: GetDagRunDeadlinesData;
+            req: GetDeadlinesData;
             res: {
                 /**
                  * Successful Response
                  */
-                200: DealineCollectionResponse;
+                200: DeadlineCollectionResponse;
+                /**
+                 * Bad Request
+                 */
+                400: HTTPExceptionResponse;
+                /**
+                 * Not Found
+                 */
+                404: HTTPExceptionResponse;
+                /**
+                 * Validation Error
+                 */
+                422: HTTPValidationError;
+            };
+        };
+    };
+    '/ui/dags/{dag_id}/deadlineAlerts': {
+        get: {
+            req: GetDagDeadlineAlertsData;
+            res: {
+                /**
+                 * Successful Response
+                 */
+                200: DeadlineAlertCollectionResponse;
                 /**
                  * Not Found
                  */
@@ -6896,14 +7025,14 @@ export type $OpenApiTs = {
             };
         };
     };
-    '/ui/grid/ti_summaries/{dag_id}/{run_id}': {
+    '/ui/grid/ti_summaries/{dag_id}': {
         get: {
-            req: GetGridTiSummariesData;
+            req: GetGridTiSummariesStreamData;
             res: {
                 /**
-                 * Successful Response
+                 * NDJSON stream — one ``GridTISummaries`` JSON object per line, one per Dag run
                  */
-                200: GridTISummaries;
+                200: string;
                 /**
                  * Bad Request
                  */

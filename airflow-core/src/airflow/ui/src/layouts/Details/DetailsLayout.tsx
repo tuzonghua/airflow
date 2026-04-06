@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 /*!
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -46,10 +48,13 @@ import {
   dagRunStateFilterKey,
   dagViewKey,
   DEFAULT_DAG_VIEW_KEY,
+  runAfterGteKey,
+  runAfterLteKey,
   runTypeFilterKey,
   showGanttKey,
   triggeringUserFilterKey,
 } from "src/constants/localStorage";
+import { VersionIndicatorOptions } from "src/constants/showVersionIndicatorOptions";
 import { HoverProvider } from "src/context/hover";
 import { OpenGroupsProvider } from "src/context/openGroups";
 
@@ -74,6 +79,8 @@ export const DetailsLayout = ({ children, error, isLoading, tabs }: Props) => {
   const panelGroupRef = useRef<ImperativePanelGroupHandle | null>(null);
   const [dagView, setDagView] = useLocalStorage<"graph" | "grid">(dagViewKey(dagId), defaultDagView);
   const [limit, setLimit] = useLocalStorage<number>(dagRunsLimitKey(dagId), 10);
+  const [runAfterGte, setRunAfterGte] = useLocalStorage<string | undefined>(runAfterGteKey(dagId), undefined);
+  const [runAfterLte, setRunAfterLte] = useLocalStorage<string | undefined>(runAfterLteKey(dagId), undefined);
   const [runTypeFilter, setRunTypeFilter] = useLocalStorage<DagRunType | undefined>(
     runTypeFilterKey(dagId),
     undefined,
@@ -88,6 +95,11 @@ export const DetailsLayout = ({ children, error, isLoading, tabs }: Props) => {
   );
 
   const [showGantt, setShowGantt] = useLocalStorage<boolean>(showGanttKey(dagId), false);
+  // Global setting: applies to all Dags (intentionally not scoped to dagId)
+  const [showVersionIndicatorMode, setShowVersionIndicatorMode] = useLocalStorage<VersionIndicatorOptions>(
+    `version_indicator_display_mode`,
+    VersionIndicatorOptions.ALL,
+  );
   const { fitView, getZoom } = useReactFlow();
   const { data: warningData } = useDagWarningServiceListDagWarnings({ dagId });
   const { onClose, onOpen, open } = useDisclosure();
@@ -155,14 +167,20 @@ export const DetailsLayout = ({ children, error, isLoading, tabs }: Props) => {
                   dagView={dagView}
                   limit={limit}
                   panelGroupRef={panelGroupRef}
+                  runAfterGte={runAfterGte}
+                  runAfterLte={runAfterLte}
                   runTypeFilter={runTypeFilter}
                   setDagRunStateFilter={setDagRunStateFilter}
                   setDagView={setDagView}
                   setLimit={setLimit}
+                  setRunAfterGte={setRunAfterGte}
+                  setRunAfterLte={setRunAfterLte}
                   setRunTypeFilter={setRunTypeFilter}
                   setShowGantt={setShowGantt}
+                  setShowVersionIndicatorMode={setShowVersionIndicatorMode}
                   setTriggeringUserFilter={setTriggeringUserFilter}
                   showGantt={showGantt}
+                  showVersionIndicatorMode={showVersionIndicatorMode}
                   triggeringUserFilter={triggeringUserFilter}
                 />
                 {dagView === "graph" ? (
@@ -172,14 +190,19 @@ export const DetailsLayout = ({ children, error, isLoading, tabs }: Props) => {
                     <Grid
                       dagRunState={dagRunStateFilter}
                       limit={limit}
+                      runAfterGte={runAfterGte}
+                      runAfterLte={runAfterLte}
                       runType={runTypeFilter}
                       showGantt={Boolean(runId) && showGantt}
+                      showVersionIndicatorMode={showVersionIndicatorMode}
                       triggeringUser={triggeringUserFilter}
                     />
                     {showGantt ? (
                       <Gantt
                         dagRunState={dagRunStateFilter}
                         limit={limit}
+                        runAfterGte={runAfterGte}
+                        runAfterLte={runAfterLte}
                         runType={runTypeFilter}
                         triggeringUser={triggeringUserFilter}
                       />

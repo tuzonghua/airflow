@@ -116,7 +116,10 @@ export const Logs = () => {
     );
   };
 
-  const getLogString = () => getParsedLogs().join("\n");
+  const getLogString = () =>
+    getParsedLogs()
+      .filter((line) => line !== "")
+      .join("\n");
 
   const downloadLogs = () => {
     const logContent = getLogString();
@@ -198,7 +201,7 @@ export const Logs = () => {
                 <Heading mb={2} size="xl">
                   {taskId}
                 </Heading>
-                <TaskLogHeader {...logHeaderProps} />
+                <TaskLogHeader {...logHeaderProps} isFullscreen />
               </Box>
             </Dialog.Header>
 

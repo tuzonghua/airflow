@@ -27,6 +27,27 @@
 Changelog
 ---------
 
+6.5.1
+.....
+
+Bug Fixes
+~~~~~~~~~
+
+* ``Elasticsearch / opensearch logging exception details are missing in task log tab (#63739)``
+* ``Fix conf import to common.compat in 'ElasticsearchTaskHandler' (#64118)``
+* ``Remove self parameter from resolve_nested (#64146)``
+
+Misc
+~~~~
+
+* ``Support elasticsearch 9 (#64070)``
+* ``Add Python 3.14 Support (#63520)``
+
+.. Below changes are excluded from the changelog. Move them to
+   appropriate section above if needed. Do not delete the lines(!):
+   * ``Add *.iml to .gitignore in all distributions (#63636)``
+   * ``Enable Elasticsearch provider integration tests in CI (#62942)``
+
 6.5.0
 .....
 
@@ -46,10 +67,14 @@ Bug Fixes
 
 * ``fix the write-to-es feature for Airflow 3 (#53821)``
 * ``add max_line_per_pages setting to ElasticsearchTaskHandler (#61492)``
+* ``Fix max_lines_per_page config setting for ElasticsearchRemoteLogIO (#62562)``
 
 .. Below changes are excluded from the changelog. Move them to
    appropriate section above if needed. Do not delete the lines(!):
    * ``Add 'lifecycle' field to provider.yaml schema and all providers per AIP-95 (#62190)``
+   * ``Providers ad-hoc 2026-02-20 (#62209)``
+   * ``Update provider's compatibility matrix with 2.11.1 (#62295)``
+   * ``Prepare documentation for next release of providers (2026-02-24) (#62495)``
 
 6.4.4
 .....
